@@ -78,6 +78,13 @@ func main() {
 
 This example demonstrates how to create a new Channelizer instance, register a channel with a unique key, and send and receive data using that key.
 
+To test, run:
+
+```bash
+make test
+
+```
+
 ## Future Directions
 
 Channelizer aims to evolve into a comprehensive solution for managing inter-process communication in Go applications. Future versions will introduce the ability to handle all Go data types, further simplifying the process of sending and receiving data across channels. This flexibility will empower developers to build more complex and responsive applications with ease.
