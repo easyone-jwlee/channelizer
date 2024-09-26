@@ -93,13 +93,13 @@ func (c *Channelizer) MonitorChannelBuffer(key string) error {
 	switch c.chanRegistry[key].ChannelType {
 	case ChannelTypeBytes:
 		channel := c.chanRegistry[key].Channel.(chan []byte)
-		fmt.Printf("Channel buffer usage: %d/%d\n", len(channel), cap(channel))
+		fmt.Printf("channel buffer usage: %d/%d, key: %v\n", len(channel), cap(channel), key)
 	case ChannelTypeInt:
 		channel := c.chanRegistry[key].Channel.(chan int)
-		fmt.Printf("Channel buffer usage: %d/%d\n", len(channel), cap(channel))
+		fmt.Printf("channel buffer usage: %d/%d, key: %v\n", len(channel), cap(channel), key)
 	case ChannelTypeString:
 		channel := c.chanRegistry[key].Channel.(chan string)
-		fmt.Printf("Channel buffer usage: %d/%d\n", len(channel), cap(channel))
+		fmt.Printf("channel buffer usage: %d/%d, key: %v\n", len(channel), cap(channel), key)
 	}
 	return nil
 }
