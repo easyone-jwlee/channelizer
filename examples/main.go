@@ -10,7 +10,7 @@ import (
 func main() {
 	chz := channelizer.New()
 
-	channel1 := make(chan []byte, 100)
+	channel1 := make(chan []byte, 1000)
 	channel2 := make(chan int, 10)
 	channel3 := make(chan string, 10)
 
@@ -66,15 +66,22 @@ func main() {
 	for {
 		select {
 		case <-ticker2s.C:
-			if err := chz.MonitorChannelBuffer("one"); err != nil {
+			len1, cap1, err := chz.MonitorChannelBuffer("one")
+			if err != nil {
 				fmt.Printf("failed to monitor buffer of channel1. Error: %v\n", err)
 			}
-			if err := chz.MonitorChannelBuffer("two"); err != nil {
-				fmt.Printf("failed to monitor buffer of channel1. Error: %v\n", err)
+			len2, cap2, err := chz.MonitorChannelBuffer("two")
+			if err != nil {
+				fmt.Printf("failed to monitor buffer of channel2. Error: %v\n", err)
 			}
-			if err := chz.MonitorChannelBuffer("three"); err != nil {
-				fmt.Printf("failed to monitor buffer of channel1. Error: %v\n", err)
+			len3, cap3, err := chz.MonitorChannelBuffer("three")
+			if err != nil {
+				fmt.Printf("failed to monitor buffer of channel3. Error: %v\n", err)
 			}
+			fmt.Printf("Channel buffer usage: %d/%d, key: %v\n", len1, cap1, "one")
+			fmt.Printf("Channel buffer usage: %d/%d, key: %v\n", len2, cap2, "two")
+			fmt.Printf("Channel buffer usage: %d/%d, key: %v\n", len3, cap3, "three")
+
 		case <-ticker1s.C:
 			for i := 0; i < 50000; i++ {
 				if err := chz.Send("one", []byte("one")); err != nil {

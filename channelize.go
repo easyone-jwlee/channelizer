@@ -86,20 +86,24 @@ func (c *Channelizer) checkType(key string, data any) error {
 	return nil
 }
 
-func (c *Channelizer) MonitorChannelBuffer(key string) error {
+func (c *Channelizer) MonitorChannelBuffer(key string) (length int, capacity int, err error) {
 	if _, isExist := c.chanRegistry[key]; !isExist {
-		return fmt.Errorf("key not found")
+		return 0, 0, fmt.Errorf("key not found")
 	}
 	switch c.chanRegistry[key].ChannelType {
 	case ChannelTypeBytes:
 		channel := c.chanRegistry[key].Channel.(chan []byte)
-		fmt.Printf("Channel buffer usage: %d/%d\n", len(channel), cap(channel))
+		length = len(channel)
+		capacity = cap(channel)
+		return
 	case ChannelTypeInt:
 		channel := c.chanRegistry[key].Channel.(chan int)
-		fmt.Printf("Channel buffer usage: %d/%d\n", len(channel), cap(channel))
+		length = len(channel)
+		capacity = cap(channel)
 	case ChannelTypeString:
 		channel := c.chanRegistry[key].Channel.(chan string)
-		fmt.Printf("Channel buffer usage: %d/%d\n", len(channel), cap(channel))
+		length = len(channel)
+		capacity = cap(channel)
 	}
-	return nil
+	return
 }
