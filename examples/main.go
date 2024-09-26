@@ -10,9 +10,9 @@ import (
 func main() {
 	chz := channelizer.New()
 
-	channel1 := make(chan []byte)
-	channel2 := make(chan int)
-	channel3 := make(chan string)
+	channel1 := make(chan []byte, 100)
+	channel2 := make(chan int, 10)
+	channel3 := make(chan string, 10)
 
 	if err := chz.Add("one", channel1); err != nil {
 		fmt.Printf("failed to add channel1. Error: %v\n", err)
@@ -27,11 +27,20 @@ func main() {
 		return
 	}
 
+	ticker1s := time.NewTicker(1 * time.Second)
+	ticker2s := time.NewTicker(2 * time.Second)
+	ticker3s := time.NewTicker(3 * time.Second)
+	ticker10s := time.NewTicker(10 * time.Second)
+
 	go func() {
+		countOne := 0
 		for {
 			select {
-			case data := <-channel1:
-				fmt.Printf("get data via channel1: %v\n", string(data))
+			case <-channel1:
+				countOne++
+			case <-ticker10s.C:
+				fmt.Printf("get data via channel1: %v\n", countOne)
+				countOne = 0
 			}
 		}
 	}()
@@ -54,14 +63,23 @@ func main() {
 		}
 	}()
 
-	ticker1s := time.NewTicker(1 * time.Second)
-	ticker2s := time.NewTicker(2 * time.Second)
-	ticker3s := time.NewTicker(3 * time.Second)
 	for {
 		select {
+		case <-ticker2s.C:
+			if err := chz.MonitorChannelBuffer("one"); err != nil {
+				fmt.Printf("failed to monitor buffer of channel1. Error: %v\n", err)
+			}
+			if err := chz.MonitorChannelBuffer("two"); err != nil {
+				fmt.Printf("failed to monitor buffer of channel1. Error: %v\n", err)
+			}
+			if err := chz.MonitorChannelBuffer("three"); err != nil {
+				fmt.Printf("failed to monitor buffer of channel1. Error: %v\n", err)
+			}
 		case <-ticker1s.C:
-			if err := chz.Send("one", []byte("one")); err != nil {
-				fmt.Printf("failed to send channel1. Error: %v\n", err)
+			for i := 0; i < 50000; i++ {
+				if err := chz.Send("one", []byte("one")); err != nil {
+					fmt.Printf("failed to send channel1. Error: %v\n", err)
+				}
 			}
 		case <-ticker2s.C:
 			if err := chz.Send("two", 2); err != nil {

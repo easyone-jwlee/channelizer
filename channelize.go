@@ -1,66 +1,105 @@
 package channelizer
 
 import (
-	"errors"
+	"fmt"
 	"reflect"
 )
 
 type ChannelType uint8
 
 const (
-	ChannelTypeBytes  ChannelType = 1
-	ChannelTypeInt    ChannelType = 2
-	ChannelTypeString ChannelType = 3
+	ChannelTypeBytes ChannelType = iota + 1
+	ChannelTypeInt
+	ChannelTypeString
 )
 
+type ChannelData struct {
+	ChannelType ChannelType
+	Channel     any
+}
+
 type Channelizer struct {
-	chanRoute    map[string]ChannelType
-	chanRegistry map[string]any
+	chanRegistry map[string]ChannelData
 }
 
 func New() *Channelizer {
 	return &Channelizer{
-		chanRoute:    make(map[string]ChannelType),
-		chanRegistry: make(map[string]any),
+		chanRegistry: make(map[string]ChannelData),
 	}
 }
 
 func (c *Channelizer) Add(key string, channel any) error {
+	var channelType ChannelType
 	switch channel.(type) {
 	case chan []byte:
-		c.chanRoute[key] = ChannelTypeBytes
+		channelType = ChannelTypeBytes
 	case chan int:
-		c.chanRoute[key] = ChannelTypeInt
+		channelType = ChannelTypeInt
 	case chan string:
-		c.chanRoute[key] = ChannelTypeString
+		channelType = ChannelTypeString
 	default:
-		return errors.New("unsupported data type")
+		return fmt.Errorf("unsupported data type. data_type: %v", reflect.TypeOf(channel))
 	}
-	c.chanRegistry[key] = channel
+	c.chanRegistry[key] = ChannelData{
+		ChannelType: channelType,
+		Channel:     channel,
+	}
 	return nil
 }
 
 func (c *Channelizer) Send(key string, data any) error {
-	if _, isExist := c.chanRoute[key]; !isExist {
-		return errors.New("key not found")
+	if _, isExist := c.chanRegistry[key]; !isExist {
+		return fmt.Errorf("key not found")
 	}
-	if !checkType(c.chanRegistry[key], data) {
-		return errors.New("data type does not match")
+	if err := c.checkType(key, data); err != nil {
+		return fmt.Errorf("failed to check data type. error: %v", err)
 	}
-	switch c.chanRoute[key] {
+	switch c.chanRegistry[key].ChannelType {
 	case ChannelTypeBytes:
-		channel := c.chanRegistry[key].(chan []byte)
+		channel := c.chanRegistry[key].Channel.(chan []byte)
 		channel <- data.([]byte)
 	case ChannelTypeInt:
-		channel := c.chanRegistry[key].(chan int)
+		channel := c.chanRegistry[key].Channel.(chan int)
 		channel <- data.(int)
 	case ChannelTypeString:
-		channel := c.chanRegistry[key].(chan string)
+		channel := c.chanRegistry[key].Channel.(chan string)
 		channel <- data.(string)
 	}
 	return nil
 }
 
-func checkType(channel any, data any) bool {
-	return reflect.TypeOf(channel).Elem() == reflect.TypeOf(data)
+func (c *Channelizer) checkType(key string, data any) error {
+	switch c.chanRegistry[key].ChannelType {
+	case ChannelTypeBytes:
+		if _, ok := data.([]byte); !ok {
+			return fmt.Errorf("data type mismatch: expected []byte")
+		}
+	case ChannelTypeInt:
+		if _, ok := data.(int); !ok {
+			return fmt.Errorf("data type mismatch: expected int")
+		}
+	case ChannelTypeString:
+		if _, ok := data.(string); !ok {
+			return fmt.Errorf("data type mismatch: expected string")
+		}
+	}
+	return nil
+}
+
+func (c *Channelizer) MonitorChannelBuffer(key string) error {
+	if _, isExist := c.chanRegistry[key]; !isExist {
+		return fmt.Errorf("key not found")
+	}
+	switch c.chanRegistry[key].ChannelType {
+	case ChannelTypeBytes:
+		channel := c.chanRegistry[key].Channel.(chan []byte)
+		fmt.Printf("Channel buffer usage: %d/%d\n", len(channel), cap(channel))
+	case ChannelTypeInt:
+		channel := c.chanRegistry[key].Channel.(chan int)
+		fmt.Printf("Channel buffer usage: %d/%d\n", len(channel), cap(channel))
+	case ChannelTypeString:
+		channel := c.chanRegistry[key].Channel.(chan string)
+		fmt.Printf("Channel buffer usage: %d/%d\n", len(channel), cap(channel))
+	}
+	return nil
 }
